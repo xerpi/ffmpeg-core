@@ -12,29 +12,57 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        build: [linux, windows, macos]
-        arch: [x64, arm64]
         include:
           - build: linux
             os: ubuntu-latest
             triplet: linux-release
             vcpkg-root: /usr/local/share/vcpkg
+            arch: x64
             extra-args: ""
+          - build: linux
+            os: ubuntu-latest
+            triplet: linux-release
+            vcpkg-root: /usr/local/share/vcpkg
+            arch: arm
+            extra-args: ""
+          - build: linux
+            os: ubuntu-latest
+            triplet: linux-release
+            vcpkg-root: /usr/local/share/vcpkg
+            arch: arm64
+            extra-args: ""
+
           - build: windows
             os: windows-latest
             triplet: win-llvm-static-release
             vcpkg-root: C:\vcpkg
+            arch: x64
             extra-args: --overlay-triplets=./triplets
+          - build: windows
+            os: windows-latest
+            triplet: win-llvm-static-release
+            vcpkg-root: C:\vcpkg
+            arch: arm64
+            extra-args: --overlay-triplets=./triplets
+
           - build: mingw
             os: windows-latest
             triplet: mingw-static
             vcpkg-root: C:\vcpkg
             arch: x64
             extra-args: ""
+
           - build: macos
             os: macos-latest
             triplet: osx-release
             vcpkg-root: /Users/runner/vcpkg
+            arch: x64
+            extra-args: ""
+          - build: macos
+            os: macos-latest
+            triplet: osx-release
+            vcpkg-root: /Users/runner/vcpkg
+            arch: arm64
             extra-args: ""
           - build: macos
             os: macos-latest
@@ -69,6 +97,11 @@ jobs:
           sudo apt -y install nasm
         if: matrix.os == 'ubuntu-latest'
 
+      - name: Set up build environment (arm ubuntu-latest)
+        run: |
+          sudo apt-get install -qy binutils-arm-linux-gnueabihf gcc-arm-linux-gnueabihf g++-arm-linux-gnueabihf
+        if: matrix.os == 'ubuntu-latest' && matrix.arch == 'arm'
+
       - name: Set up build environment (arm64 ubuntu-latest)
         run: |
           sudo apt-get install -qy binutils-aarch64-linux-gnu gcc-aarch64-linux-gnu g++-aarch64-linux-gnu
@@ -78,8 +111,8 @@ jobs:
         run: |
           (cd ${{ matrix.vcpkg-root }} && git fetch origin)
           (cd ${{ matrix.vcpkg-root }} && git reset --hard)
-          (cd ${{ matrix.vcpkg-root }} && git checkout f6a5d4e8eb7476b8d7fc12a56dff300c1c986131)
-          (cd ${{ matrix.vcpkg-root }} && git apply --ignore-space-change --ignore-whitespace --3way ${{ github.workspace }}/ffmpeg.patch)
+          (cd ${{ matrix.vcpkg-root }} && git checkout 9eb6e4b60ea5bdd60a87e8d2353d53882a32a3f3)
+          (cd ${{ matrix.vcpkg-root }} && git apply --verbose --ignore-space-change --ignore-whitespace --3way ${{ github.workspace }}/ffmpeg.patch)
 
       - name: Build ffmpeg
         run: |
@@ -101,17 +134,17 @@ jobs:
 
   create-release:
     needs: [build]
-    runs-on: "ubuntu-20.04"
+    runs-on: "ubuntu-24.04"
     if: github.ref == 'refs/heads/master'
     permissions:
       contents: write
-      
+
     steps:
       - uses: actions/checkout@v4
 
       - name: Download Artifacts
         uses: actions/download-artifact@v4
-        
+
       - name: Compute short git commit SHA
         run: |
           echo "COMMIT_SHORT_SHA=$(git rev-parse --short ${{ github.sha }})" >> $GITHUB_ENV
@@ -129,6 +162,6 @@ jobs:
           ls -al artifacts/
           wget -c https://github.com/tcnksm/ghr/releases/download/v0.14.0/ghr_v0.14.0_linux_amd64.tar.gz
           tar xfv ghr_v0.14.0_linux_amd64.tar.gz
-          ghr_v0.14.0_linux_amd64/ghr -u Vita3K -r ffmpeg-core -n 'Automatic FFmpeg CI builds (${{ env.COMMIT_SHORT_SHA }})' -b "$(printf "Corresponding commit: ${{ github.sha }}")" ${{ env.COMMIT_SHORT_SHA }} artifacts/
+          ghr_v0.14.0_linux_amd64/ghr -u xerpi -r ffmpeg-core -n 'Automatic FFmpeg CI builds (${{ env.COMMIT_SHORT_SHA }})' -b "$(printf "Corresponding commit: ${{ github.sha }}")" ${{ env.COMMIT_SHORT_SHA }} artifacts/
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
