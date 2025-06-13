@@ -78,7 +78,7 @@ jobs:
         run: |
           (cd ${{ matrix.vcpkg-root }} && git fetch origin)
           (cd ${{ matrix.vcpkg-root }} && git reset --hard)
-          (cd ${{ matrix.vcpkg-root }} && git checkout f6a5d4e8eb7476b8d7fc12a56dff300c1c986131)
+          (cd ${{ matrix.vcpkg-root }} && git checkout 41f90cc7b84116517b01f729af17fc735e9cd821)
           (cd ${{ matrix.vcpkg-root }} && git apply --ignore-space-change --ignore-whitespace --3way ${{ github.workspace }}/ffmpeg.patch)
 
       - name: Build ffmpeg
@@ -105,13 +105,13 @@ jobs:
     if: github.ref == 'refs/heads/master'
     permissions:
       contents: write
-      
+
     steps:
       - uses: actions/checkout@v4
 
       - name: Download Artifacts
         uses: actions/download-artifact@v4
-        
+
       - name: Compute short git commit SHA
         run: |
           echo "COMMIT_SHORT_SHA=$(git rev-parse --short ${{ github.sha }})" >> $GITHUB_ENV
@@ -129,6 +129,6 @@ jobs:
           ls -al artifacts/
           wget -c https://github.com/tcnksm/ghr/releases/download/v0.14.0/ghr_v0.14.0_linux_amd64.tar.gz
           tar xfv ghr_v0.14.0_linux_amd64.tar.gz
-          ghr_v0.14.0_linux_amd64/ghr -u Vita3K -r ffmpeg-core -n 'Automatic FFmpeg CI builds (${{ env.COMMIT_SHORT_SHA }})' -b "$(printf "Corresponding commit: ${{ github.sha }}")" ${{ env.COMMIT_SHORT_SHA }} artifacts/
+          ghr_v0.14.0_linux_amd64/ghr -u xerpi -r ffmpeg-core -n 'Automatic FFmpeg CI builds (${{ env.COMMIT_SHORT_SHA }})' -b "$(printf "Corresponding commit: ${{ github.sha }}")" ${{ env.COMMIT_SHORT_SHA }} artifacts/
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
